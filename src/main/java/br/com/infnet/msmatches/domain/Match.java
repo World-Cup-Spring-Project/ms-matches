@@ -1,0 +1,64 @@
+package br.com.infnet.msmatches.domain;
+
+import br.com.infnet.msmatches.domain.enums.MatchStatus;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Document(collection = "matches")
+public class Match {
+
+    @Id
+    private String id;
+
+    private String externalMatchId;
+    private Integer matchday;
+    private String group;
+    private String type;
+    private String stadiumId;
+    private String homeTeamId;
+    private String awayTeamId;
+    private Integer homeScore;
+    private Integer awayScore;
+    private String homeTeamLabel;
+    private String awayTeamLabel;
+
+    @Builder.Default
+    private List<TimelineEvent> timelineEvents = new ArrayList<>();
+
+    @Builder.Default
+    private MatchStatus status = MatchStatus.SCHEDULED;
+
+    @Builder.Default
+    private Boolean finished = false;
+
+    private LocalDate localDate;
+    private String rawLocalDate;
+    private Instant createdAt;
+    private Instant updatedAt;
+
+    public void addTimelineEvent(TimelineEvent event) {
+        if (timelineEvents == null) {
+            timelineEvents = new ArrayList<>();
+        }
+        timelineEvents.add(event);
+        updatedAt = Instant.now();
+    }
+
+    public void changeStatus(MatchStatus nextStatus) {
+        status = nextStatus;
+        finished = MatchStatus.FINISHED.equals(nextStatus);
+        updatedAt = Instant.now();
+    }
+}

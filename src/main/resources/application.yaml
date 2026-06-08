@@ -1,0 +1,10 @@
+spring:
+  application:
+    name: ms-matches
+  mongodb:
+    uri: ${MONGODB_URI:mongodb://localhost:27017/ms_matches}
+
+integrations:
+  core-data:
+    base-url: ${CORE_DATA_BASE_URL:http://localhost:8081}
+    validation-enabled: ${CORE_DATA_VALIDATION_ENABLED:false}
