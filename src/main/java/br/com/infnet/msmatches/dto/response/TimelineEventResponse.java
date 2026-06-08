@@ -1,4 +1,4 @@
-package br.com.infnet.msmatches.dto;
+package br.com.infnet.msmatches.dto.response;
 
 import br.com.infnet.msmatches.domain.enums.EventType;
 import java.time.Instant;

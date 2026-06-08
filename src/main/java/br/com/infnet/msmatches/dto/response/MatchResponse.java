@@ -1,24 +1,29 @@
-package br.com.infnet.msmatches.dto;
+package br.com.infnet.msmatches.dto.response;
 
 import br.com.infnet.msmatches.domain.enums.MatchStatus;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.util.List;
 
-public record CreateMatchRequest(
+public record MatchResponse(
+        String id,
         String externalMatchId,
-        @NotNull Integer matchday,
+        Integer matchday,
         String group,
         String type,
-        @NotBlank String stadiumId,
+        String stadiumId,
         String homeTeamId,
         String awayTeamId,
         Integer homeScore,
         Integer awayScore,
         String homeTeamLabel,
         String awayTeamLabel,
+        List<TimelineEventResponse> timelineEvents,
         MatchStatus status,
+        Boolean finished,
         LocalDate localDate,
-        String rawLocalDate
+        String rawLocalDate,
+        Instant createdAt,
+        Instant updatedAt
 ) {
 }

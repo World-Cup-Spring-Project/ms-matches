@@ -2,10 +2,10 @@ package br.com.infnet.msmatches.controller;
 
 import br.com.infnet.msmatches.domain.Match;
 import br.com.infnet.msmatches.domain.enums.MatchStatus;
-import br.com.infnet.msmatches.dto.AddTimelineEventRequest;
-import br.com.infnet.msmatches.dto.ChangeMatchStatusRequest;
-import br.com.infnet.msmatches.dto.CreateMatchRequest;
-import br.com.infnet.msmatches.dto.MatchResponse;
+import br.com.infnet.msmatches.dto.request.AddTimelineEventRequest;
+import br.com.infnet.msmatches.dto.request.ChangeMatchStatusRequest;
+import br.com.infnet.msmatches.dto.request.CreateMatchRequest;
+import br.com.infnet.msmatches.dto.response.MatchResponse;
 import br.com.infnet.msmatches.mapper.MatchMapper;
 import br.com.infnet.msmatches.service.MatchService;
 import jakarta.validation.Valid;

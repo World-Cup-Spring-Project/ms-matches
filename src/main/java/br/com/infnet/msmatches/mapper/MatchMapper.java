@@ -2,10 +2,10 @@ package br.com.infnet.msmatches.mapper;
 
 import br.com.infnet.msmatches.domain.Match;
 import br.com.infnet.msmatches.domain.TimelineEvent;
-import br.com.infnet.msmatches.dto.AddTimelineEventRequest;
-import br.com.infnet.msmatches.dto.CreateMatchRequest;
-import br.com.infnet.msmatches.dto.MatchResponse;
-import br.com.infnet.msmatches.dto.TimelineEventResponse;
+import br.com.infnet.msmatches.dto.request.AddTimelineEventRequest;
+import br.com.infnet.msmatches.dto.request.CreateMatchRequest;
+import br.com.infnet.msmatches.dto.response.MatchResponse;
+import br.com.infnet.msmatches.dto.response.TimelineEventResponse;
 import java.util.List;
 import org.springframework.stereotype.Component;
 
