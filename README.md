@@ -120,6 +120,7 @@ br.com.infnet.msmatches
 |-- controller
 |-- domain
 |   `-- enums
+|   `-- model
 |-- dto
 |-- exception
 |-- mapper
