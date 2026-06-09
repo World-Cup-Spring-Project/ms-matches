@@ -1,8 +1,8 @@
 package br.com.infnet.msmatches.service;
 
 import br.com.infnet.msmatches.client.CoreDataClient;
-import br.com.infnet.msmatches.domain.Match;
-import br.com.infnet.msmatches.domain.TimelineEvent;
+import br.com.infnet.msmatches.domain.model.Match;
+import br.com.infnet.msmatches.domain.model.TimelineEvent;
 import br.com.infnet.msmatches.exception.InvalidMatchReferenceException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

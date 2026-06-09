@@ -1,7 +1,7 @@
 package br.com.infnet.msmatches.service;
 
-import br.com.infnet.msmatches.domain.Match;
-import br.com.infnet.msmatches.domain.TimelineEvent;
+import br.com.infnet.msmatches.domain.model.Match;
+import br.com.infnet.msmatches.domain.model.TimelineEvent;
 import br.com.infnet.msmatches.domain.enums.MatchStatus;
 import br.com.infnet.msmatches.exception.MatchNotFoundException;
 import br.com.infnet.msmatches.repository.MatchRepository;

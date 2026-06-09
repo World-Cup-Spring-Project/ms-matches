@@ -1,6 +1,6 @@
 package br.com.infnet.msmatches.controller;
 
-import br.com.infnet.msmatches.domain.Match;
+import br.com.infnet.msmatches.domain.model.Match;
 import br.com.infnet.msmatches.domain.enums.MatchStatus;
 import br.com.infnet.msmatches.dto.request.AddTimelineEventRequest;
 import br.com.infnet.msmatches.dto.request.ChangeMatchStatusRequest;

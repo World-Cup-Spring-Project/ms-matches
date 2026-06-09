@@ -1,7 +1,7 @@
 package br.com.infnet.msmatches.mapper;
 
-import br.com.infnet.msmatches.domain.Match;
-import br.com.infnet.msmatches.domain.TimelineEvent;
+import br.com.infnet.msmatches.domain.model.Match;
+import br.com.infnet.msmatches.domain.model.TimelineEvent;
 import br.com.infnet.msmatches.dto.request.AddTimelineEventRequest;
 import br.com.infnet.msmatches.dto.request.CreateMatchRequest;
 import br.com.infnet.msmatches.dto.response.MatchResponse;

@@ -1,6 +1,6 @@
 package br.com.infnet.msmatches.repository;
 
-import br.com.infnet.msmatches.domain.Match;
+import br.com.infnet.msmatches.domain.model.Match;
 import br.com.infnet.msmatches.domain.enums.MatchStatus;
 import java.time.LocalDate;
 import java.util.List;
