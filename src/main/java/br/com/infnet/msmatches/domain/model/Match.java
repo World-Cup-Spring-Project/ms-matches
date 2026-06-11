@@ -58,7 +58,8 @@ public class Match {
 
     public void changeStatus(MatchStatus nextStatus) {
         status = nextStatus;
-        finished = MatchStatus.FINISHED.equals(nextStatus);
+        finished = MatchStatus.FINISHED.equals(nextStatus)
+                || MatchStatus.POST_MATCH_CLOSED.equals(nextStatus);
         updatedAt = Instant.now();
     }
 }

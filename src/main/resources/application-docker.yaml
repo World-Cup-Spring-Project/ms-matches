@@ -1,0 +1,9 @@
+spring:
+  mongodb:
+    uri: ${MONGODB_URI:${MONGO_URI:mongodb://mongo:27017/arenacup}}
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:kafka:9092}
+
+integrations:
+  core-data:
+    base-url: ${CORE_DATA_BASE_URL:${CORE_DATA_URL:http://ms-core-data:8081}}
