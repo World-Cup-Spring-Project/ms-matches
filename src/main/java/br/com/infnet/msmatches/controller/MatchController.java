@@ -52,7 +52,7 @@ public class MatchController {
             @PathVariable String id,
             @Valid @RequestBody ChangeMatchStatusRequest request
     ) {
-        return matchMapper.toResponse(matchService.changeStatus(id, request.status()));
+        return matchMapper.toResponse(matchService.changeStatus(id, request));
     }
 
     @PostMapping("/{id}/timeline-events")

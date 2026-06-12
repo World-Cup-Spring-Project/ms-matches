@@ -27,6 +27,12 @@ public class RestExceptionHandler {
                 .body(errorResponseMapper.toResponse(HttpStatus.BAD_REQUEST, exception.getMessage()));
     }
 
+    @ExceptionHandler(InvalidStatusChangeException.class)
+    ResponseEntity<Map<String, Object>> handleInvalidStatusChange(InvalidStatusChangeException exception) {
+        return ResponseEntity.badRequest()
+                .body(errorResponseMapper.toResponse(HttpStatus.BAD_REQUEST, exception.getMessage()));
+    }
+
     @ExceptionHandler(CoreDataUnavailableException.class)
     ResponseEntity<Map<String, Object>> handleCoreDataUnavailable(CoreDataUnavailableException exception) {
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)

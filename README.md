@@ -166,13 +166,37 @@ GET /stadiums/{stadiumId}
 
 Esses endpoints ainda são provisórios. Quando o `ms-core-data` for implementado, o contrato pode ser ajustado no `CoreDataClient`.
 
+## Integração Kafka (ms-engagement)
+
+O `ms-matches` publica `MatchStatusChangedEvent` no tópico `match-status-changed-events` sempre que o status muda via `PATCH /matches/{id}/status`. O `ms-engagement` consome esse evento para abrir/fechar a janela de votação.
+
+Exemplo — fim de jogo com candidatos ao Craque do Jogo:
+
+```http
+PATCH /matches/{id}/status
+Content-Type: application/json
+
+{
+  "status": "FINISHED",
+  "correlationId": "demo-001",
+  "candidates": [
+    { "playerId": "L.Messi", "matchRating": 8.7 },
+    { "playerId": "K.Mbappe", "matchRating": 7.9 },
+    { "playerId": "J.Alvarez", "matchRating": 8.2 }
+  ]
+}
+```
+
+Status `POST_MATCH_CLOSED` fecha a janela de votação no `ms-engagement`.
+
+**Chave da mensagem:** `matchId` (ordem por partida na mesma partição Kafka).
+
 ## O Que Ainda Falta
 
-Ainda não faz parte desta versão inicial:
+Ainda não faz parte desta versão:
 
 - Ingestão automática da API externa `worldcup2026`.
 - Worker com `@Scheduled` para sincronizar jogos.
-- Kafka para publicar eventos como `MatchStatusChangedEvent`.
 - Redis para cache ou baixa latência em placar ao vivo.
 - Autenticação/JWT.
 - Testes de integração com MongoDB.
@@ -184,19 +208,23 @@ Ainda não faz parte desta versão inicial:
 
 Redis não foi incluído nesta primeira versão porque o MongoDB já atende o escopo atual de persistir partidas, status, placar e timeline. Redis pode ser avaliado depois se houver necessidade de cache de partidas ao vivo, baixa latência ou controle de concorrência.
 
-Kafka também ficou fora do escopo inicial.
-
 ## Como Executar
 
-Com MongoDB disponível em `localhost:27017`:
+Com MongoDB e Kafka disponíveis localmente:
 
 ```powershell
 $env:MONGODB_URI='mongodb://localhost:27017/ms_matches'
+$env:KAFKA_BOOTSTRAP_SERVERS='localhost:29092'
 .\mvnw.cmd spring-boot:run
 ```
 
-Ou usando o valor padrão do `application.yaml`, basta iniciar a aplicação normalmente.
+Demo E2E com `ms-engagement`:
+
+```powershell
+cd code/ms-engagement/compose
+docker compose up --build
+```
 
 ## Status
 
-Esta versão entrega a base de domínio e API REST do `ms-matches`. Ela está pronta para evoluir para integrações externas, mas ainda não implementa mensageria, ingestão automática ou validação real com outro microserviço.
+Esta versão entrega API REST, persistência MongoDB e publicação Kafka para integração com o `ms-engagement`.

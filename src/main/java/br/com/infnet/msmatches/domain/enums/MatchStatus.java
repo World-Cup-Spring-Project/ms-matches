@@ -5,6 +5,7 @@ public enum MatchStatus {
     LIVE,
     HALF_TIME,
     FINISHED,
+    POST_MATCH_CLOSED,
     POSTPONED,
     CANCELLED
 }
