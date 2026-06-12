@@ -13,12 +13,24 @@ spring:
         enable.idempotence: true
   jackson:
     default-property-inclusion: non_null
-    serialization:
-      write-dates-as-timestamps: false
+    datatype:
+      datetime:
+        write-dates-as-timestamps: false
 
 server:
   port: ${SERVER_PORT:8082}
   shutdown: graceful
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_SERVER_URL:http://localhost:8761/eureka/}
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    prefer-ip-address: true
+    status-page-url-path: /actuator/info
+    health-check-url-path: /actuator/health
 
 management:
   endpoints:
@@ -31,10 +43,7 @@ management:
         enabled: true
       group:
         readiness:
-          include: readinessState,kafka
-  health:
-    kafka:
-      enabled: true
+          include: readinessState
 
 integrations:
   core-data:
