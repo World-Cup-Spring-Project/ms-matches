@@ -4,8 +4,6 @@ import br.com.infnet.msmatches.domain.model.Match;
 import br.com.infnet.msmatches.domain.model.TimelineEvent;
 import br.com.infnet.msmatches.domain.enums.MatchStatus;
 import br.com.infnet.msmatches.dto.request.ChangeMatchStatusRequest;
-import br.com.infnet.msmatches.dto.request.MatchCandidateRequest;
-import br.com.infnet.msmatches.exception.InvalidStatusChangeException;
 import br.com.infnet.msmatches.exception.MatchNotFoundException;
 import br.com.infnet.msmatches.infra.kafka.MatchStatusChangedPublisher;
 import br.com.infnet.msmatches.infra.kafka.events.MatchCandidateEvent;
@@ -21,11 +19,10 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class MatchService {
 
-    private static final int REQUIRED_CANDIDATES = 3;
-
     private final MatchRepository matchRepository;
     private final CoreDataReferenceValidator coreDataReferenceValidator;
     private final MatchStatusChangedPublisher matchStatusChangedPublisher;
+    private final MatchRatingService matchRatingService;
 
     public Match create(Match match) {
         coreDataReferenceValidator.validateMatchReferences(match);
@@ -52,8 +49,6 @@ public class MatchService {
     }
 
     public Match changeStatus(String id, ChangeMatchStatusRequest request) {
-        validateStatusChange(request);
-
         Match match = resolveMatch(id);
         match.changeStatus(request.status());
         Match saved = matchRepository.save(match);
@@ -62,12 +57,16 @@ public class MatchService {
                 ? request.correlationId()
                 : UUID.randomUUID().toString();
 
+        List<MatchCandidateEvent> candidates = request.status() == MatchStatus.FINISHED
+                ? matchRatingService.generateTopCandidates(saved)
+                : null;
+
         matchStatusChangedPublisher.publish(new MatchStatusChangedEvent(
                 saved.getId(),
                 saved.getStatus().name(),
                 correlationId,
                 Instant.now(),
-                toEventCandidates(request.candidates())
+                candidates
         ));
 
         return saved;
@@ -82,27 +81,6 @@ public class MatchService {
         }
         match.addTimelineEvent(event);
         return matchRepository.save(match);
-    }
-
-    private void validateStatusChange(ChangeMatchStatusRequest request) {
-        if (request.status() != MatchStatus.FINISHED) {
-            return;
-        }
-
-        List<MatchCandidateRequest> candidates = request.candidates();
-        if (candidates == null || candidates.size() != REQUIRED_CANDIDATES) {
-            throw new InvalidStatusChangeException(
-                    "Status FINISHED requires exactly " + REQUIRED_CANDIDATES + " candidates");
-        }
-    }
-
-    private List<MatchCandidateEvent> toEventCandidates(List<MatchCandidateRequest> candidates) {
-        if (candidates == null) {
-            return null;
-        }
-        return candidates.stream()
-                .map(candidate -> new MatchCandidateEvent(candidate.playerId(), candidate.matchRating()))
-                .toList();
     }
 
     private Match resolveMatch(String id) {
