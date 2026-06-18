@@ -10,8 +10,8 @@ import org.springframework.web.client.RestClient;
 public class CoreDataClientConfig {
 
     @Bean
-    RestClient coreDataRestClient(CoreDataProperties properties) {
-        return RestClient.builder()
+    RestClient coreDataRestClient(RestClient.Builder builder, CoreDataProperties properties) {
+        return builder
                 .baseUrl(properties.baseUrl())
                 .build();
     }

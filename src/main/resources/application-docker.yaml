@@ -1,6 +1,7 @@
 spring:
-  mongodb:
-    uri: ${MONGODB_URI:${MONGO_URI:mongodb://mongo:27017/arenacup}}
+  data:
+    mongodb:
+      uri: ${MONGODB_URI:${MONGO_URI:mongodb://mongo:27017/arenacup}}
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:kafka:9092}
 
