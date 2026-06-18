@@ -6,6 +6,6 @@ import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 
 public record MatchCandidateRequest(
-        @NotBlank String playerId,
+        @NotBlank String playerName,
         @NotNull BigDecimal matchRating
 ) {}

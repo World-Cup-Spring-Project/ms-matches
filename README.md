@@ -180,9 +180,9 @@ Content-Type: application/json
   "status": "FINISHED",
   "correlationId": "demo-001",
   "candidates": [
-    { "playerId": "L.Messi", "matchRating": 8.7 },
-    { "playerId": "K.Mbappe", "matchRating": 7.9 },
-    { "playerId": "J.Alvarez", "matchRating": 8.2 }
+    { "playerName": "Lionel Messi", "matchRating": 8.7 },
+    { "playerName": "Kylian Mbappé", "matchRating": 7.9 },
+    { "playerName": "Julián Álvarez", "matchRating": 8.2 }
   ]
 }
 ```
