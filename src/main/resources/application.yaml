@@ -18,12 +18,24 @@ spring:
         enable.idempotence: true
   jackson:
     default-property-inclusion: non_null
-    serialization:
-      write-dates-as-timestamps: false
+    datatype:
+      datetime:
+        write-dates-as-timestamps: false
 
 server:
   port: ${SERVER_PORT:8082}
   shutdown: graceful
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_SERVER_URL:http://localhost:8761/eureka/}
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    prefer-ip-address: true
+    status-page-url-path: /actuator/info
+    health-check-url-path: /actuator/health
 
 management:
   endpoints:
@@ -51,6 +63,11 @@ integrations:
   core-data:
     base-url: ${CORE_DATA_BASE_URL:${CORE_DATA_URL:http://localhost:8081}}
     validation-enabled: ${CORE_DATA_VALIDATION_ENABLED:false}
+    sync-enabled: ${CORE_DATA_SYNC_ENABLED:true}
+    sync-on-startup: ${CORE_DATA_SYNC_ON_STARTUP:true}
+    sync-interval-ms: ${CORE_DATA_SYNC_INTERVAL_MS:300000}
+    games-path: ${CORE_DATA_GAMES_PATH:/games}
+    game-by-id-path: ${CORE_DATA_GAME_BY_ID_PATH:/games/{gameId}}
 
 arenacup:
   kafka:

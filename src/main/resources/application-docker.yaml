@@ -5,6 +5,15 @@ spring:
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:kafka:9092}
 
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_SERVER_URL:http://eureka-server:8761/eureka/}
+  instance:
+    prefer-ip-address: true
+    hostname: ${HOSTNAME:ms-matches}
+
 integrations:
   core-data:
     base-url: ${CORE_DATA_BASE_URL:${CORE_DATA_URL:http://ms-core-data:8081}}
+    sync-on-startup: ${CORE_DATA_SYNC_ON_STARTUP:true}
