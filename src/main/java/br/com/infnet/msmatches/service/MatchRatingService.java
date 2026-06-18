@@ -31,7 +31,7 @@ public class MatchRatingService {
                 .map(player -> new RatedPlayer(player, randomRating()))
                 .sorted(Comparator.comparing(RatedPlayer::rating).reversed())
                 .limit(TOP_CANDIDATES)
-                .map(rated -> new MatchCandidateEvent(rated.player().name(), rated.rating()))
+                .map(rated -> new MatchCandidateEvent(rated.player().id(), rated.rating()))
                 .toList();
     }
 

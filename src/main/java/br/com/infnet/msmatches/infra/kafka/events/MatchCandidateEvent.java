@@ -6,6 +6,6 @@ import java.math.BigDecimal;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record MatchCandidateEvent(
-        String playerName,
+        String playerId,
         BigDecimal matchRating
 ) {}
