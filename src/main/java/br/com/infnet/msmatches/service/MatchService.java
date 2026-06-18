@@ -48,14 +48,13 @@ public class MatchService {
     }
 
     public Match findById(String id) {
-        return matchRepository.findById(id)
-                .orElseThrow(() -> new MatchNotFoundException(id));
+        return resolveMatch(id);
     }
 
     public Match changeStatus(String id, ChangeMatchStatusRequest request) {
         validateStatusChange(request);
 
-        Match match = findById(id);
+        Match match = resolveMatch(id);
         match.changeStatus(request.status());
         Match saved = matchRepository.save(match);
 
@@ -77,7 +76,7 @@ public class MatchService {
     public Match addTimelineEvent(String id, TimelineEvent event) {
         coreDataReferenceValidator.validateTimelineEventReference(event);
 
-        Match match = findById(id);
+        Match match = resolveMatch(id);
         if (event.getOccurredAt() == null) {
             event.setOccurredAt(Instant.now());
         }
@@ -104,5 +103,11 @@ public class MatchService {
         return candidates.stream()
                 .map(candidate -> new MatchCandidateEvent(candidate.playerId(), candidate.matchRating()))
                 .toList();
+    }
+
+    private Match resolveMatch(String id) {
+        return matchRepository.findById(id)
+                .or(() -> matchRepository.findByExternalMatchId(id))
+                .orElseThrow(() -> new MatchNotFoundException(id));
     }
 }

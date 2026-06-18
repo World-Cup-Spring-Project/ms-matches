@@ -49,6 +49,11 @@ integrations:
   core-data:
     base-url: ${CORE_DATA_BASE_URL:${CORE_DATA_URL:http://localhost:8081}}
     validation-enabled: ${CORE_DATA_VALIDATION_ENABLED:false}
+    sync-enabled: ${CORE_DATA_SYNC_ENABLED:true}
+    sync-on-startup: ${CORE_DATA_SYNC_ON_STARTUP:true}
+    sync-interval-ms: ${CORE_DATA_SYNC_INTERVAL_MS:300000}
+    games-path: ${CORE_DATA_GAMES_PATH:/games}
+    game-by-id-path: ${CORE_DATA_GAME_BY_ID_PATH:/games/{gameId}}
 
 arenacup:
   kafka:

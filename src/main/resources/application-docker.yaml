@@ -15,3 +15,4 @@ eureka:
 integrations:
   core-data:
     base-url: ${CORE_DATA_BASE_URL:${CORE_DATA_URL:http://ms-core-data:8081}}
+    sync-on-startup: ${CORE_DATA_SYNC_ON_STARTUP:true}

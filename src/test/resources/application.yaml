@@ -3,3 +3,8 @@ eureka:
     enabled: false
     register-with-eureka: false
     fetch-registry: false
+
+integrations:
+  core-data:
+    sync-enabled: false
+    sync-on-startup: false

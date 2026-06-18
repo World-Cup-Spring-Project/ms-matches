@@ -6,8 +6,10 @@ import br.com.infnet.msmatches.dto.request.AddTimelineEventRequest;
 import br.com.infnet.msmatches.dto.request.ChangeMatchStatusRequest;
 import br.com.infnet.msmatches.dto.request.CreateMatchRequest;
 import br.com.infnet.msmatches.dto.response.MatchResponse;
+import br.com.infnet.msmatches.dto.response.MatchSyncResponse;
 import br.com.infnet.msmatches.mapper.MatchMapper;
 import br.com.infnet.msmatches.service.MatchService;
+import br.com.infnet.msmatches.service.MatchSyncService;
 import jakarta.validation.Valid;
 import java.net.URI;
 import java.util.List;
@@ -28,7 +30,18 @@ import org.springframework.web.bind.annotation.RestController;
 public class MatchController {
 
     private final MatchService matchService;
+    private final MatchSyncService matchSyncService;
     private final MatchMapper matchMapper;
+
+    @PostMapping("/sync")
+    public MatchSyncResponse syncFromCoreData() {
+        return matchSyncService.syncAll();
+    }
+
+    @PostMapping("/sync/{externalMatchId}")
+    public MatchResponse syncGameFromCoreData(@PathVariable String externalMatchId) {
+        return matchMapper.toResponse(matchSyncService.syncGame(externalMatchId));
+    }
 
     @PostMapping
     public ResponseEntity<MatchResponse> create(@Valid @RequestBody CreateMatchRequest request) {
