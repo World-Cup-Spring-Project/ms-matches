@@ -3,6 +3,7 @@ package br.com.infnet.msmatches.service;
 import br.com.infnet.msmatches.domain.model.Match;
 import br.com.infnet.msmatches.domain.enums.MatchStatus;
 import br.com.infnet.msmatches.dto.request.ChangeMatchStatusRequest;
+import br.com.infnet.msmatches.exception.InvalidStatusChangeException;
 import br.com.infnet.msmatches.exception.MatchNotFoundException;
 import br.com.infnet.msmatches.infra.kafka.MatchStatusChangedPublisher;
 import br.com.infnet.msmatches.infra.kafka.events.MatchCandidateEvent;
@@ -12,9 +13,11 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class MatchService {
@@ -27,10 +30,8 @@ public class MatchService {
         Instant now = Instant.now();
         match.setCreatedAt(now);
         match.setUpdatedAt(now);
-        if (match.getStatus() == null) {
-            match.setStatus(MatchStatus.SCHEDULED);
-        }
-        match.setFinished(isFinishedStatus(match.getStatus()));
+        MatchStatus initialStatus = match.getStatus() != null ? match.getStatus() : MatchStatus.SCHEDULED;
+        match.changeStatus(initialStatus);
         return matchRepository.save(match);
     }
 
@@ -55,8 +56,34 @@ public class MatchService {
 
         match.changeStatus(request.status());
         Match saved = matchRepository.save(match);
-        publishStatusChange(saved, null, correlationId);
+
+        if (request.status().marksAsFinished()) {
+            publishStatusChange(saved, null, correlationId);
+        }
+
         return saved;
+    }
+
+    public void saveSyncedMatch(Match match, MatchStatus previousStatus) {
+        MatchStatus mappedStatus = match.getStatus();
+        boolean shouldPublishFinished = shouldPublishFinishedOnSync(mappedStatus, previousStatus);
+
+        if (shouldPublishFinished) {
+            match.changeStatus(statusBeforeSyncFinishedTransition(previousStatus));
+        }
+
+        matchRepository.save(match);
+
+        if (!shouldPublishFinished) {
+            return;
+        }
+
+        try {
+            transitionToFinished(match, "sync-" + match.getExternalMatchId());
+        } catch (InvalidStatusChangeException exception) {
+            log.warn("Sync kept match {} at status {}: {}",
+                    match.getExternalMatchId(), match.getStatus(), exception.getMessage());
+        }
     }
 
     public Match transitionToFinished(Match match, String correlationId) {
@@ -94,7 +121,13 @@ public class MatchService {
         return correlationId != null ? correlationId : UUID.randomUUID().toString();
     }
 
-    private boolean isFinishedStatus(MatchStatus status) {
-        return MatchStatus.FINISHED.equals(status) || MatchStatus.POST_MATCH_CLOSED.equals(status);
+    private boolean shouldPublishFinishedOnSync(MatchStatus mappedStatus, MatchStatus previousStatus) {
+        return mappedStatus == MatchStatus.FINISHED
+                && previousStatus != MatchStatus.FINISHED
+                && previousStatus != MatchStatus.POST_MATCH_CLOSED;
+    }
+
+    private MatchStatus statusBeforeSyncFinishedTransition(MatchStatus previousStatus) {
+        return previousStatus == null ? MatchStatus.SCHEDULED : previousStatus;
     }
 }

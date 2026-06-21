@@ -10,8 +10,6 @@ spring:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:29092}
     template:
       observation-enabled: true
-    listener:
-      observation-enabled: true
     producer:
       acks: all
       properties:

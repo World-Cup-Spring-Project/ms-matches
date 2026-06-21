@@ -7,5 +7,9 @@ public enum MatchStatus {
     FINISHED,
     POST_MATCH_CLOSED,
     POSTPONED,
-    CANCELLED
+    CANCELLED;
+
+    public boolean marksAsFinished() {
+        return this == FINISHED || this == POST_MATCH_CLOSED;
+    }
 }

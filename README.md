@@ -59,7 +59,9 @@ Alinhado com a API [rezarahiminia/worldcup2026](https://github.com/rezarahiminia
 - `homeTeamLabel`, `awayTeamLabel` (nomes ou placeholders de mata-mata)
 - `stadiumId`, `group`, `matchday`, `type`, `status`, `finished`
 
-Status disponíveis: `SCHEDULED`, `LIVE`, `HALF_TIME`, `FINISHED`, `POST_MATCH_CLOSED`, `POSTPONED`, `CANCELLED`.
+Status operacionais: `SCHEDULED`, `LIVE`, `HALF_TIME`, `FINISHED`, `POST_MATCH_CLOSED`.
+
+`POSTPONED` e `CANCELLED` existem no enum como **reservados** — não são usados pelo sync, PATCH ou Kafka no escopo atual.
 
 ## Endpoints
 
@@ -171,7 +173,14 @@ Ao marcar `FINISHED`:
 
 ## Integração Kafka (ms-engagement)
 
-O `ms-matches` publica no tópico `match-status-changed-events` quando o status muda para `FINISHED` — via **sync** (partida encerrada no core-data) ou via **`PATCH /matches/{id}/status`** (testes e demais transições de status).
+O `ms-matches` publica no tópico `match-status-changed-events` **somente** nos status `FINISHED` e `POST_MATCH_CLOSED`:
+
+| Origem | Status publicado |
+|--------|------------------|
+| Sync (core-data encerrado) | `FINISHED` (com candidatos) |
+| `PATCH /matches/{id}/status` | `FINISHED` (com candidatos) ou `POST_MATCH_CLOSED` (sem candidatos) |
+
+Transições para `LIVE`, `HALF_TIME`, `SCHEDULED` etc. **não** publicam Kafka.
 
 **Chave da mensagem:** `externalMatchId` (ID da Copa). Partidas sem `externalMatchId` usam o ID do MongoDB.
 

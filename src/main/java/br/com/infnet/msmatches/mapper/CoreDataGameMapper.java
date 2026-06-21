@@ -42,14 +42,12 @@ public class CoreDataGameMapper {
         match.setLocalDate(parseLocalDate(game.localDate()));
         match.setHomeTeamLabel(resolveTeamLabel(game.homeTeamLabel(), game.homeTeamNameEn()));
         match.setAwayTeamLabel(resolveTeamLabel(game.awayTeamLabel(), game.awayTeamNameEn()));
-        MatchStatus status = deriveStatus(game, match.getStatus());
-        match.setStatus(status);
-        match.setFinished(MatchStatus.FINISHED.equals(status) || MatchStatus.POST_MATCH_CLOSED.equals(status));
+        match.changeStatus(deriveStatus(game, match.getStatus()));
         return match;
     }
 
     private MatchStatus deriveStatus(CoreDataGameResponse game, MatchStatus currentStatus) {
-        if (currentStatus == MatchStatus.POST_MATCH_CLOSED || currentStatus == MatchStatus.FINISHED) {
+        if (currentStatus != null && currentStatus.marksAsFinished()) {
             return currentStatus;
         }
 

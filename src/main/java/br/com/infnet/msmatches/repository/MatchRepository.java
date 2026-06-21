@@ -12,6 +12,4 @@ public interface MatchRepository extends MongoRepository<Match, String> {
     Optional<Match> findByExternalMatchId(String externalMatchId);
 
     List<Match> findByStatus(MatchStatus status);
-
-    List<Match> findByLocalDate(LocalDate localDate);
 }
