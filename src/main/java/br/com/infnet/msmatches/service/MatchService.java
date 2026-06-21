@@ -1,7 +1,6 @@
 package br.com.infnet.msmatches.service;
 
 import br.com.infnet.msmatches.domain.model.Match;
-import br.com.infnet.msmatches.domain.model.TimelineEvent;
 import br.com.infnet.msmatches.domain.enums.MatchStatus;
 import br.com.infnet.msmatches.dto.request.ChangeMatchStatusRequest;
 import br.com.infnet.msmatches.exception.MatchNotFoundException;
@@ -14,26 +13,24 @@ import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 @Service
 @RequiredArgsConstructor
 public class MatchService {
 
     private final MatchRepository matchRepository;
-    private final CoreDataReferenceValidator coreDataReferenceValidator;
     private final MatchStatusChangedPublisher matchStatusChangedPublisher;
     private final MatchRatingService matchRatingService;
 
     public Match create(Match match) {
-        coreDataReferenceValidator.validateMatchReferences(match);
-
         Instant now = Instant.now();
         match.setCreatedAt(now);
         match.setUpdatedAt(now);
         if (match.getStatus() == null) {
             match.setStatus(MatchStatus.SCHEDULED);
         }
-        match.setFinished(MatchStatus.FINISHED.equals(match.getStatus()));
+        match.setFinished(isFinishedStatus(match.getStatus()));
         return matchRepository.save(match);
     }
 
@@ -50,42 +47,54 @@ public class MatchService {
 
     public Match changeStatus(String id, ChangeMatchStatusRequest request) {
         Match match = resolveMatch(id);
+        String correlationId = resolveCorrelationId(request.correlationId());
+
+        if (request.status() == MatchStatus.FINISHED) {
+            return transitionToFinished(match, correlationId);
+        }
+
         match.changeStatus(request.status());
         Match saved = matchRepository.save(match);
-
-        String correlationId = request.correlationId() != null
-                ? request.correlationId()
-                : UUID.randomUUID().toString();
-
-        List<MatchCandidateEvent> candidates = request.status() == MatchStatus.FINISHED
-                ? matchRatingService.generateTopCandidates(saved)
-                : null;
-
-        matchStatusChangedPublisher.publish(new MatchStatusChangedEvent(
-                saved.getId(),
-                saved.getStatus().name(),
-                correlationId,
-                Instant.now(),
-                candidates
-        ));
-
+        publishStatusChange(saved, null, correlationId);
         return saved;
     }
 
-    public Match addTimelineEvent(String id, TimelineEvent event) {
-        coreDataReferenceValidator.validateTimelineEventReference(event);
-
-        Match match = resolveMatch(id);
-        if (event.getOccurredAt() == null) {
-            event.setOccurredAt(Instant.now());
-        }
-        match.addTimelineEvent(event);
-        return matchRepository.save(match);
+    public Match transitionToFinished(Match match, String correlationId) {
+        List<MatchCandidateEvent> candidates = matchRatingService.generateTopCandidates(match);
+        match.changeStatus(MatchStatus.FINISHED);
+        Match saved = matchRepository.save(match);
+        publishStatusChange(saved, candidates, correlationId);
+        return saved;
     }
 
     private Match resolveMatch(String id) {
         return matchRepository.findById(id)
                 .or(() -> matchRepository.findByExternalMatchId(id))
                 .orElseThrow(() -> new MatchNotFoundException(id));
+    }
+
+    private void publishStatusChange(Match match, List<MatchCandidateEvent> candidates, String correlationId) {
+        matchStatusChangedPublisher.publish(new MatchStatusChangedEvent(
+                resolveEventMatchId(match),
+                match.getStatus().name(),
+                correlationId,
+                Instant.now(),
+                candidates
+        ));
+    }
+
+    private String resolveEventMatchId(Match match) {
+        if (StringUtils.hasText(match.getExternalMatchId())) {
+            return match.getExternalMatchId();
+        }
+        return match.getId();
+    }
+
+    private String resolveCorrelationId(String correlationId) {
+        return correlationId != null ? correlationId : UUID.randomUUID().toString();
+    }
+
+    private boolean isFinishedStatus(MatchStatus status) {
+        return MatchStatus.FINISHED.equals(status) || MatchStatus.POST_MATCH_CLOSED.equals(status);
     }
 }

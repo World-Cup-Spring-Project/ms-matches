@@ -1,11 +1,8 @@
 package br.com.infnet.msmatches.mapper;
 
 import br.com.infnet.msmatches.domain.model.Match;
-import br.com.infnet.msmatches.domain.model.TimelineEvent;
-import br.com.infnet.msmatches.dto.request.AddTimelineEventRequest;
 import br.com.infnet.msmatches.dto.request.CreateMatchRequest;
 import br.com.infnet.msmatches.dto.response.MatchResponse;
-import br.com.infnet.msmatches.dto.response.TimelineEventResponse;
 import java.util.List;
 import org.springframework.stereotype.Component;
 
@@ -31,18 +28,6 @@ public class MatchMapper {
                 .build();
     }
 
-    public TimelineEvent toDomain(AddTimelineEventRequest request) {
-        return TimelineEvent.builder()
-                .type(request.type())
-                .minute(request.minute())
-                .stoppageMinute(request.stoppageMinute())
-                .player(request.player())
-                .teamId(request.teamId())
-                .description(request.description())
-                .occurredAt(request.occurredAt())
-                .build();
-    }
-
     public MatchResponse toResponse(Match match) {
         return new MatchResponse(
                 match.getId(),
@@ -57,7 +42,6 @@ public class MatchMapper {
                 match.getAwayScore(),
                 match.getHomeTeamLabel(),
                 match.getAwayTeamLabel(),
-                toTimelineEventResponses(match.getTimelineEvents()),
                 match.getStatus(),
                 match.getFinished(),
                 match.getLocalDate(),
@@ -71,27 +55,5 @@ public class MatchMapper {
         return matches.stream()
                 .map(this::toResponse)
                 .toList();
-    }
-
-    private List<TimelineEventResponse> toTimelineEventResponses(List<TimelineEvent> events) {
-        if (events == null) {
-            return List.of();
-        }
-
-        return events.stream()
-                .map(this::toTimelineEventResponse)
-                .toList();
-    }
-
-    private TimelineEventResponse toTimelineEventResponse(TimelineEvent event) {
-        return new TimelineEventResponse(
-                event.getType(),
-                event.getMinute(),
-                event.getStoppageMinute(),
-                event.getPlayer(),
-                event.getTeamId(),
-                event.getDescription(),
-                event.getOccurredAt()
-        );
     }
 }

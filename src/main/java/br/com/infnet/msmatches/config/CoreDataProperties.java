@@ -5,7 +5,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "integrations.core-data")
 public record CoreDataProperties(
         String baseUrl,
-        boolean validationEnabled,
         boolean syncEnabled,
         boolean syncOnStartup,
         long syncIntervalMs,

@@ -21,12 +21,6 @@ public class RestExceptionHandler {
                 .body(errorResponseMapper.toResponse(HttpStatus.NOT_FOUND, exception.getMessage()));
     }
 
-    @ExceptionHandler(InvalidMatchReferenceException.class)
-    ResponseEntity<Map<String, Object>> handleInvalidReference(InvalidMatchReferenceException exception) {
-        return ResponseEntity.badRequest()
-                .body(errorResponseMapper.toResponse(HttpStatus.BAD_REQUEST, exception.getMessage()));
-    }
-
     @ExceptionHandler(InvalidStatusChangeException.class)
     ResponseEntity<Map<String, Object>> handleInvalidStatusChange(InvalidStatusChangeException exception) {
         return ResponseEntity.badRequest()

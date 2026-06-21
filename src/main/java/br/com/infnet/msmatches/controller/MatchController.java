@@ -2,7 +2,6 @@ package br.com.infnet.msmatches.controller;
 
 import br.com.infnet.msmatches.domain.model.Match;
 import br.com.infnet.msmatches.domain.enums.MatchStatus;
-import br.com.infnet.msmatches.dto.request.AddTimelineEventRequest;
 import br.com.infnet.msmatches.dto.request.ChangeMatchStatusRequest;
 import br.com.infnet.msmatches.dto.request.CreateMatchRequest;
 import br.com.infnet.msmatches.dto.response.MatchResponse;
@@ -66,13 +65,5 @@ public class MatchController {
             @Valid @RequestBody ChangeMatchStatusRequest request
     ) {
         return matchMapper.toResponse(matchService.changeStatus(id, request));
-    }
-
-    @PostMapping("/{id}/timeline-events")
-    public MatchResponse addTimelineEvent(
-            @PathVariable String id,
-            @Valid @RequestBody AddTimelineEventRequest request
-    ) {
-        return matchMapper.toResponse(matchService.addTimelineEvent(id, matchMapper.toDomain(request)));
     }
 }

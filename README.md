@@ -1,13 +1,13 @@
 # ms-matches
 
-Microserviço de gestão de partidas da Copa do Mundo 2026 para o Arena Cup. Mantém uma cópia local dos jogos vindos do `ms-core-data`, controla o ciclo de vida operacional da partida (status, timeline) e publica eventos no Kafka para o `ms-engagement` abrir e fechar a votação do Craque do Jogo.
+Microserviço de gestão de partidas da Copa do Mundo 2026 para o Arena Cup. Mantém uma cópia local dos jogos vindos do `ms-core-data`, controla o ciclo de vida operacional da partida (status) e publica eventos no Kafka para o `ms-engagement` abrir e fechar a votação do Craque do Jogo.
 
 ## O que este serviço faz
 
 | Responsabilidade | Descrição |
 |------------------|-----------|
 | **Réplica local** | Sincroniza jogos do `ms-core-data` para o MongoDB |
-| **Operação** | Status da partida, timeline de eventos |
+| **Operação** | Status da partida (`FINISHED`, `POST_MATCH_CLOSED`, etc.) |
 | **Craque do Jogo** | Gera top 3 jogadores com nota mock ao finalizar a partida |
 | **Integração** | Publica `MatchStatusChangedEvent` no Kafka |
 
@@ -33,8 +33,7 @@ worldcup2026 API
 
 - Sincronização de jogos com o `ms-core-data` (na subida, periódica e manual)
 - Consulta de partidas (lista, filtro por status, busca por ID)
-- Atualização de status da partida
-- Timeline de eventos dentro da partida
+- Atualização de status da partida via `PATCH` ou sync (publica Kafka no `FINISHED`)
 - Geração automática dos 3 candidatos ao Craque do Jogo no `FINISHED`
 - Publicação de eventos Kafka para o `ms-engagement`
 - Cadastro manual de partida (`POST /matches`) — opcional, para testes
@@ -48,7 +47,9 @@ Cada partida tem dois identificadores:
 | `id` | `6a332f74d0225425e6683127` | ID interno do MongoDB |
 | `externalMatchId` | `"1"` … `"104"` | ID da Copa / `ms-core-data` |
 
-`GET /matches/{id}`, `PATCH /matches/{id}/status` e `POST /matches/{id}/timeline-events` aceitam **ambos**.
+`GET /matches/{id}` e `PATCH /matches/{id}/status` aceitam **ambos**.
+
+Eventos Kafka usam o `externalMatchId` (ID da Copa) como `matchId`, alinhado ao `ms-core-data` e ao `ms-tickets`.
 
 ## Modelo de partida
 
@@ -57,15 +58,8 @@ Alinhado com a API [rezarahiminia/worldcup2026](https://github.com/rezarahiminia
 - `externalMatchId`, `homeTeamId`, `awayTeamId`, `homeScore`, `awayScore`
 - `homeTeamLabel`, `awayTeamLabel` (nomes ou placeholders de mata-mata)
 - `stadiumId`, `group`, `matchday`, `type`, `status`, `finished`
-- `timelineEvents` (eventos manuais do domínio Arena Cup)
 
 Status disponíveis: `SCHEDULED`, `LIVE`, `HALF_TIME`, `FINISHED`, `POST_MATCH_CLOSED`, `POSTPONED`, `CANCELLED`.
-
-## Timeline de eventos
-
-Tipos suportados: `GOAL`, `YELLOW_CARD`, `RED_CARD`, `SUBSTITUTION`, `PENALTY`, `VAR_REVIEW`, `STATUS_CHANGE`.
-
-Cada evento pode ter minuto, acréscimo, jogador, `teamId`, descrição e `occurredAt`.
 
 ## Endpoints
 
@@ -114,21 +108,6 @@ Content-Type: application/json
 
 **Importante:** `GET /matches/{id}/status` não existe. Para consultar o status, use `GET /matches/{id}`.
 
-### Adicionar evento na timeline
-
-```http
-POST /matches/{id}/timeline-events
-Content-Type: application/json
-
-{
-  "type": "GOAL",
-  "minute": 67,
-  "player": "L. Messi",
-  "teamId": "1",
-  "description": "Goal from open play"
-}
-```
-
 ### Criar partida manualmente (opcional)
 
 ```http
@@ -149,21 +128,31 @@ O sync faz **upsert** por `externalMatchId`: não duplica jogos em execuções r
 
 ### O que o sync atualiza
 
-- Placar, times, grupo, estádio, data, `finished`
-- Status derivado (`SCHEDULED` / `LIVE` / `FINISHED`)
+- Placar, times, grupo, estádio, data
+- Status derivado do core-data (`SCHEDULED` / `LIVE` / `HALF_TIME` / `FINISHED`)
+
+### Eventos Kafka no sync
+
+Quando o sync detecta transição para `FINISHED` (partida encerrada no core-data), o serviço:
+
+1. Persiste placar e metadados atualizados
+2. Gera os 3 candidatos mock (mesma regra do `PATCH`)
+3. Publica `match-status-changed-events` com `correlationId` `sync-{externalMatchId}`
+
+Se o elenco mock não existir (ex.: placeholder de mata-mata), a partida **permanece** no status anterior e o evento não é publicado.
+
+O `PATCH /matches/{id}/status` continua disponível para testes manuais e para `POST_MATCH_CLOSED`.
 
 ### O que o sync preserva
 
-- `timelineEvents` (eventos manuais)
 - `POST_MATCH_CLOSED` (não sobrescreve após fechar a votação)
+- `FINISHED` já publicado (não republica a cada ciclo de sync)
 
 ### Endpoints consumidos no core-data
 
 ```http
 GET /games
 GET /games/{gameId}
-GET /teams/{teamId}      (só com validation-enabled)
-GET /stadiums/{stadiumId} (só com validation-enabled)
 ```
 
 ## Craque do Jogo (notas mock)
@@ -172,24 +161,25 @@ Como a API não retorna jogadores, o serviço usa o arquivo `src/main/resources/
 
 Ao marcar `FINISHED`:
 
-1. Busca jogadores dos dois times pelo `homeTeamLabel` e `awayTeamLabel`
-2. Sorteia nota entre **6.0** e **10.0** para cada jogador
-3. Seleciona os **3 maiores**
-4. Publica no evento Kafka
+1. Valida elenco **antes** de persistir o status
+2. Busca jogadores dos dois times pelo `homeTeamLabel` e `awayTeamLabel`
+3. Sorteia nota entre **6.0** e **10.0** para cada jogador
+4. Seleciona os **3 maiores**
+5. Persiste e publica no evento Kafka
 
-**Limitação:** só funciona com nomes reais de seleção (ex.: Mexico vs South Africa). Jogos de mata-mata com placeholder (`"Runner-up Group A"`) não têm elenco no mock.
+**Limitação:** só funciona com nomes reais de seleção (ex.: Mexico vs South Africa). Jogos de mata-mata com placeholder (`"Runner-up Group A"`) não têm elenco no mock — o `PATCH` para `FINISHED` retorna 400.
 
 ## Integração Kafka (ms-engagement)
 
-O `ms-matches` publica no tópico `match-status-changed-events` **sempre** que o status muda via `PATCH /matches/{id}/status`.
+O `ms-matches` publica no tópico `match-status-changed-events` quando o status muda para `FINISHED` — via **sync** (partida encerrada no core-data) ou via **`PATCH /matches/{id}/status`** (testes e demais transições de status).
 
-**Chave da mensagem:** `matchId` (ID interno do MongoDB).
+**Chave da mensagem:** `externalMatchId` (ID da Copa). Partidas sem `externalMatchId` usam o ID do MongoDB.
 
 ### Formato do evento
 
 ```json
 {
-  "matchId": "6a332f74d0225425e6683127",
+  "matchId": "1",
   "status": "FINISHED",
   "correlationId": "demo-001",
   "occurredAt": "2026-06-18T12:00:00.123Z",
@@ -206,10 +196,11 @@ O campo `candidates` só aparece no status `FINISHED`. Nos demais status, é omi
 ### Fluxo típico com o engagement
 
 ```text
-PATCH status: LIVE              → engagement abre janela (se configurado)
-PATCH status: FINISHED          → engagement recebe 3 candidatos
+PATCH status: FINISHED          → engagement recebe 3 candidatos e abre janela
 PATCH status: POST_MATCH_CLOSED → engagement fecha votação
 ```
+
+Use o `externalMatchId` (ex.: `1`) nas chamadas ao engagement após o `PATCH`.
 
 ## Configuração
 
@@ -228,7 +219,6 @@ spring:
 integrations:
   core-data:
     base-url: ${CORE_DATA_BASE_URL:http://localhost:8081}
-    validation-enabled: ${CORE_DATA_VALIDATION_ENABLED:false}
     sync-enabled: ${CORE_DATA_SYNC_ENABLED:true}
     sync-on-startup: ${CORE_DATA_SYNC_ON_STARTUP:true}
     sync-interval-ms: ${CORE_DATA_SYNC_INTERVAL_MS:300000}
@@ -248,13 +238,10 @@ Profile Docker: `src/main/resources/application-docker.yaml` (hostnames de conta
 | `MONGODB_URI` | Conexão MongoDB | `mongodb://localhost:27017/ms_matches` |
 | `KAFKA_BOOTSTRAP_SERVERS` | Broker Kafka | `localhost:29092` |
 | `CORE_DATA_BASE_URL` | URL do ms-core-data | `http://localhost:8081` |
-| `CORE_DATA_VALIDATION_ENABLED` | Valida times/estádios na criação manual | `false` |
 | `CORE_DATA_SYNC_ENABLED` | Sync periódico | `true` |
 | `CORE_DATA_SYNC_ON_STARTUP` | Sync na subida | `true` |
 | `CORE_DATA_SYNC_INTERVAL_MS` | Intervalo do sync (ms) | `300000` |
 | `EUREKA_CLIENT_ENABLED` | Registro no Eureka | `true` |
-
-**Recomendação:** mantenha `validation-enabled: false` com sync ativo. A validação só faz sentido no `POST /matches` manual.
 
 ## Como executar
 
@@ -292,13 +279,9 @@ docker run -p 8082:8082 -e SPRING_PROFILES_ACTIVE=docker ms-matches
 
 1. Suba Kafka, MongoDB, `ms-core-data`, `ms-matches` e `ms-engagement` no **mesmo broker Kafka**
 2. Confirme que o engagement consome `match-status-changed-events` e lê `playerName` (não `playerId`)
-3. Dispare os status:
+3. Dispare os status usando o `externalMatchId`:
 
 ```powershell
-curl -X PATCH http://localhost:8082/matches/1/status `
-  -H "Content-Type: application/json" `
-  -d '{"status":"LIVE","correlationId":"demo-001"}'
-
 curl -X PATCH http://localhost:8082/matches/1/status `
   -H "Content-Type: application/json" `
   -d '{"status":"FINISHED","correlationId":"demo-001"}'
@@ -319,7 +302,7 @@ br.com.infnet.msmatches
 |-- controller/
 |-- domain/
 |   |-- enums/
-|   `-- model/       # Match, TimelineEvent, SquadPlayer
+|   `-- model/       # Match, SquadPlayer
 |-- dto/
 |   |-- request/
 |   |-- response/

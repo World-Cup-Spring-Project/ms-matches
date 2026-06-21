@@ -3,8 +3,6 @@ package br.com.infnet.msmatches.domain.model;
 import br.com.infnet.msmatches.domain.enums.MatchStatus;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -35,9 +33,6 @@ public class Match {
     private String awayTeamLabel;
 
     @Builder.Default
-    private List<TimelineEvent> timelineEvents = new ArrayList<>();
-
-    @Builder.Default
     private MatchStatus status = MatchStatus.SCHEDULED;
 
     @Builder.Default
@@ -47,14 +42,6 @@ public class Match {
     private String rawLocalDate;
     private Instant createdAt;
     private Instant updatedAt;
-
-    public void addTimelineEvent(TimelineEvent event) {
-        if (timelineEvents == null) {
-            timelineEvents = new ArrayList<>();
-        }
-        timelineEvents.add(event);
-        updatedAt = Instant.now();
-    }
 
     public void changeStatus(MatchStatus nextStatus) {
         status = nextStatus;
